@@ -32,6 +32,7 @@ I_SID='[id]'
 # --- Color helpers (arg: integer percent) ---
 ctx_color()  { local p=$1; if   ((p<25)); then printf '%s' "$GREEN"; elif ((p<50)); then printf '%s' "$YELLOW"; else printf '%s' "$RED"; fi; }
 sess_color() { local p=$1; if   ((p<50)); then printf '%s' "$GREEN"; elif ((p<85)); then printf '%s' "$YELLOW"; else printf '%s' "$RED"; fi; }
+hit_color()  { local p=$1; if   ((p>=80)); then printf '%s' "$GREEN"; elif ((p>=50)); then printf '%s' "$YELLOW"; else printf '%s' "$RED"; fi; }
 
 # --- Extract fields ---
 model=$(jq -r '.model.display_name // "?"'          <<< "$input")
@@ -44,6 +45,9 @@ r5at=$(jq -r '.rate_limits.five_hour.resets_at // empty'     <<< "$input")
 r7=$(jq -r '.rate_limits.seven_day.used_percentage // empty'  <<< "$input")
 cwarm=$(jq -r '.prompt_cache.warm | values'         <<< "$input")  # not //: it drops false
 cexp=$(jq -r '.prompt_cache.expires_at // empty'    <<< "$input")
+chit=$(jq -r '.prompt_cache.hit_ratio // empty'     <<< "$input")
+cmissat=$(jq -r '.prompt_cache.last_miss_at // empty' <<< "$input")
+cmisswhy=$(jq -r '.prompt_cache.last_miss_cause.causes // [] | join(",")' <<< "$input")
 rhost=$(jq -r '.workspace.repo.host  // empty'      <<< "$input")
 rowner=$(jq -r '.workspace.repo.owner // empty'     <<< "$input")
 sname=$(jq -r '.session_name // empty'  <<< "$input")
@@ -86,6 +90,16 @@ if [ "$cwarm" = "true" ] && [ -n "$cexp" ]; then
   l1="$l1  ${CORAL}${I_CACHE} ${GREEN}$(clock "$cexp")${RESET}"
 elif [ "$cwarm" = "false" ]; then
   l1="$l1  ${CORAL}${I_CACHE} ${GRAY}cold${RESET}"
+fi
+# hit ratio + when/why the cache last missed (a miss = full re-cache)
+if [ -n "$cwarm" ]; then
+  if [ -n "$chit" ]; then
+    hp=$(awk -v r="$chit" 'BEGIN{printf "%.0f", r*100}')
+    l1="$l1 $(hit_color "$hp")${hp}%${RESET}"
+  fi
+  if [ -n "$cmissat" ]; then
+    l1="$l1 ${GRAY}miss $(clock "$cmissat")${cmisswhy:+ $cmisswhy}${RESET}"
+  fi
 fi
 l1="$l1  ${CORAL}${I_COST} ${GRAY}\$${costfmt}${RESET}"
 
