@@ -1,0 +1,4 @@
+# Merge this setting into the existing [tui] table in ~/.codex/config.toml.
+# Do not replace the full config with this fragment.
+[tui]
+status_line = ["model-with-reasoning", "context-used", "five-hour-limit", "weekly-limit", "thread-name", "thread-id", "current-dir", "git-branch"]

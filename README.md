@@ -1,9 +1,10 @@
 # cmux-config
 
-Versioned copies of the terminal-environment config for Claude Code + cmux. Local only (no remote).
+Versioned copies of the terminal-environment config for Claude Code, Codex CLI, and cmux.
 
 | File in repo | Live location | How linked |
 |---|---|---|
+| `codex/statusline.toml` | `~/.codex/config.toml` → `[tui].status_line` | settings fragment; merged into the live config |
 | `claude/statusline.sh` | `~/.claude/statusline.sh` | **symlink** to this file (`~/.claude/settings.json` already points at the live path, so it is unchanged) |
 | `cmux/cmux.json.snapshot` | `~/.config/cmux/cmux.json` | reference snapshot only, not linked |
 | `cmux/settings.json.snapshot` | `~/.config/cmux/settings.json` | reference snapshot only, not linked |
@@ -26,3 +27,23 @@ ln -s "$REPO/claude/statusline.sh" ~/.claude/statusline.sh.new && mv -f ~/.claud
 
 `~/.claude/settings.json` needs `"statusLine": {"type":"command","command":"bash /Users/<you>/.claude/statusline.sh","padding":0}`.
 Pre-change originals: `~/Code/phenly/cmux-config.backup-20261014/` (outside the repo).
+
+## Codex ribbon
+
+`codex/statusline.toml` uses Codex CLI's native footer, verified with 0.166.0.
+Merge its `status_line` setting into the existing `[tui]` table in
+`~/.codex/config.toml`; preserve all other settings. Start a new CLI session
+to load it, or use `/statusline` in an existing session to pick and reorder fields.
+
+Order: model + reasoning, context used, 5-hour remaining, weekly remaining,
+thread name (when named), full thread ID, current directory, Git branch.
+Unavailable fields are omitted. The footer is one line and truncates at the
+terminal width; widen the pane or use `/statusline` to prioritize fewer fields.
+This config applies to the terminal CLI, not the desktop app's chat UI.
+
+Codex renders the footer itself with its theme. This preset does not reproduce
+Claude's custom three-line ANSI layout, dollar cost, or cache diagnostics.
+To undo, remove only `status_line` from `[tui]`, or restore the pre-install
+config backup if no other settings have changed since installation.
+
+Reference: [OpenAI footer configuration](https://learn.chatgpt.com/docs/developer-commands?surface=cli#configure-footer-items-with-statusline).
